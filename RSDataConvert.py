@@ -11,13 +11,13 @@ import xml.etree.ElementTree as ET
 
 
 class RSDataConverter:
-    def __init__(self, dataset_type, images_folder_path, labels_folder_path):
+    def __init__(self, dataset_type, self.images_folder_path, self.labels_folder_path):
         self.dataset_type = dataset_type.lower()
         if self.dataset_type not in ["visdrone", "voc", "dota", "yolo", "vhr"]:
             print("Not yet supported!")
             self.__del__()
-        self.images_folder_path = images_folder_path
-        self.labels_folder_path = labels_folder_path
+        self.self.images_folder_path = self.images_folder_path
+        self.self.labels_folder_path = self.labels_folder_path
 
     def __BoxConvert4Yolo(self, img_w, img_h, x_min, x_max, y_min, y_max):
         dw = 1.0/img_w
@@ -135,7 +135,7 @@ class RSDataConverter:
 
     def __VOC2YOLO(self, img_path, label_path, classes):
         output_file_name = os.path.basename(label_path).split(".")[0] + ".txt"
-        save_path = os.path.join(self.labels_folder_path, "../YOLO")
+        save_path = os.path.join(self.self.labels_folder_path, "../YOLO")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         objects = []
@@ -165,7 +165,7 @@ class RSDataConverter:
 
     def __DOTA2VOC(self, img_path, label_path):
         output_file_name = os.path.basename(label_path).split(".")[0] + ".xml"
-        save_path = os.path.join(self.labels_folder_path, "../VOC")
+        save_path = os.path.join(self.self.labels_folder_path, "../VOC")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         img = cv2.imread(img_path)
@@ -198,7 +198,7 @@ class RSDataConverter:
 
     def __DOTA2YOLO(self, img_path, label_path, classes=["plane", "ship", "storage-tank", "baseball-diamond", "tennis-court", "basketball-court", "ground-track-field", "harbor", "bridge", "large-vehicle", "small-vehicle", "helicopter", "roundabout", "soccer-ball-field", "swimming-pool", "container-crane", "airport", "helipad"]):
         output_file_name = os.path.basename(label_path)
-        save_path = os.path.join(self.labels_folder_path, "../YOLO")
+        save_path = os.path.join(self.self.labels_folder_path, "../YOLO")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         img = cv2.imread(img_path)
@@ -231,7 +231,7 @@ class RSDataConverter:
 
     def __VisDrone2VOC(self, img_path, label_path, classes=["ignored regions", "pedestrian", "people", "bicycle", "car", "van", "truck", "tricycle", "awning-tricycle", "bus", "motor", "others"]):
         output_file_name = os.path.basename(label_path).split(".")[0] + ".xml"
-        save_path = os.path.join(self.labels_folder_path, "../VOC")
+        save_path = os.path.join(self.self.labels_folder_path, "../VOC")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         objects = []
@@ -260,7 +260,7 @@ class RSDataConverter:
 
     def __VisDrone2YOLO(self, img_path, label_path):
         output_file_name = os.path.basename(label_path)
-        save_path = os.path.join(self.labels_folder_path, "../YOLO")
+        save_path = os.path.join(self.self.labels_folder_path, "../YOLO")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         objects = []
@@ -287,7 +287,7 @@ class RSDataConverter:
 
     def __VHR2VOC(self, img_path, label_path, classes=["airplane", "ship", "storage tank", "baseball diamond", "tennis court", "basketball court", "ground track field", "harbor", "bridge", "vehicle"]):
         output_file_name = os.path.basename(label_path).split(".")[0] + ".xml"
-        save_path = os.path.join(self.labels_folder_path, "../VOC")
+        save_path = os.path.join(self.self.labels_folder_path, "../VOC")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         objects = []
@@ -301,10 +301,10 @@ class RSDataConverter:
                 for boxes in line:
                     box = boxes.strip("\n")
                     box = box.split(",")
-                    x_min = int(box[0].replace('(', ''))
-                    y_min = int(box[1].replace(')', ''))
-                    x_max = int(box[2].replace('(', ''))
-                    y_max = int(box[3].replace(')', ''))
+                    x_min = int(box[0].replace("(", ""))
+                    y_min = int(box[1].replace(")", ""))
+                    x_max = int(box[2].replace("(", ""))
+                    y_max = int(box[3].replace(")", ""))
                     object_name = classes[int(box[4])]
                     objects.append({"object_name": object_name, "is_truncated": 0, "is_difficult": 0,
                                    "x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max})
@@ -313,7 +313,7 @@ class RSDataConverter:
 
     def __VHR2YOLO(self, img_path, label_path):
         output_file_name = os.path.basename(label_path)
-        save_path = os.path.join(self.labels_folder_path, "../YOLO")
+        save_path = os.path.join(self.self.labels_folder_path, "../YOLO")
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         objects = []
@@ -326,10 +326,10 @@ class RSDataConverter:
                 for boxes in line:
                     box = boxes.strip("\n")
                     box = box.split(",")
-                    x_min = int(box[0].replace('(', ''))
-                    y_min = int(box[1].replace(')', ''))
-                    x_max = int(box[2].replace('(', ''))
-                    y_max = int(box[3].replace(')', ''))
+                    x_min = int(box[0].replace("(", ""))
+                    y_min = int(box[1].replace(")", ""))
+                    x_max = int(box[2].replace("(", ""))
+                    y_max = int(box[3].replace(")", ""))
                     cls_id = int(box[4])
                     x, y, w, h = self.__BoxConvert4Yolo(
                         img_w, img_h, x_min, x_max, y_min, y_max)
@@ -339,53 +339,53 @@ class RSDataConverter:
                 objects, os.path.join(save_path, output_file_name))
 
     def convert2VOC(self):
-        txt_file = os.listdir(self.labels_folder_path)
+        txt_file = os.listdir(self.self.labels_folder_path)
         if self.dataset_type == "dota":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".png")
+                    self.self.images_folder_path, txt.split(".")[0] + ".png")
                 self.__DOTA2VOC(img_full_path, txt_full_path)
         elif self.dataset_type == "visdrone":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".jpg")
+                    self.self.images_folder_path, txt.split(".")[0] + ".jpg")
                 self.__VisDrone2VOC(img_full_path, txt_full_path)
         elif self.dataset_type == "vhr":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".jpg")
+                    self.self.images_folder_path, txt.split(".")[0] + ".jpg")
                 self.__VHR2VOC(img_full_path, txt_full_path)
         else:
             print("Not yet supported!")
 
     def convert2Yolo(self, classes=None):
-        txt_file = os.listdir(self.labels_folder_path)
+        txt_file = os.listdir(self.self.labels_folder_path)
         if self.dataset_type == "voc":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".jpg")
+                    self.self.images_folder_path, txt.split(".")[0] + ".jpg")
                 self.__VOC2YOLO(img_full_path, txt_full_path, classes)
         elif self.dataset_type == "visdrone":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".jpg")
+                    self.self.images_folder_path, txt.split(".")[0] + ".jpg")
                 self.__VisDrone2YOLO(img_full_path, txt_full_path)
         elif self.dataset_type == "dota":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".png")
+                    self.self.images_folder_path, txt.split(".")[0] + ".png")
                 self.__DOTA2YOLO(img_full_path, txt_full_path)
         elif self.dataset_type == "vhr":
             for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+                txt_full_path = os.path.join(self.self.labels_folder_path, txt)
                 img_full_path = os.path.join(
-                    self.images_folder_path, txt.split(".")[0] + ".jpg")
+                    self.self.images_folder_path, txt.split(".")[0] + ".jpg")
                 self.__VHR2YOLO(img_full_path, txt_full_path)
         else:
             print("Not yet supported!")
@@ -394,6 +394,32 @@ class RSDataConverter:
         del self
         print("bye!")
 
+class RSDataSetPrepare:
+    def __init__(self, dataset_name, dataset_type, images_folder_path, labels_folder_path):
+        self.dataset_type = dataset_type
+        self.dataset_name = dataset_name
+        self.images_folder_path = images_folder_path
+        self.labels_folder_path = labels_folder_path
+    def Prepare4Darknet(self, dst_path):
+        if not os.path.exists(dst_path):
+            os.mkdir(dst_path)
+        os.mkdir(os.path.join(dst_path, self.dataset_name, self.dataset_type))
+        for i in os.listdir(self.images_folder_path):
+            os.symlink(os.path.join(self.images_folder_path, i), os.path.join(dst_path, self.dataset_name, self.dataset_type, i))
+        for i in os.listdir(self.labels_folder_path):
+            os.symlink(os.path.join(self.images_folder_path, i), os.path.join(dst_path, self.dataset_name, self.dataset_type, i))
+        with open(os.path.join(dst_path, self.dataset_name), "w") as output_list_file:
+            for i in os.listdir(self.images_folder_path):
+                output_list_file.write(os.path.abspath(os.path.join(self.images_folder_path, i)) + "\n")
+    def Prepare4YoloV5(self, dst_path):
+        if not os.path.exists(dst_path):
+            os.mkdir(dst_path)
+        os.mkdir(os.path.join(dst_path, self.dataset_name, "image", self.dataset_type))
+        os.mkdir(os.path.join(dst_path, self.dataset_name, "label", self.dataset_type))
+        for i in os.listdir(self.images_folder_path):
+            os.symlink(os.path.join(self.images_folder_path, i), os.path.join(dst_path, self.dataset_name, "image", self.dataset_type, i))
+        for i in os.listdir(self.labels_folder_path):
+            os.symlink(os.path.join(self.images_folder_path, i), os.path.join(dst_path, self.dataset_name, "label", self.dataset_type, i))
 
 if __name__ == "__main__":
     pass
