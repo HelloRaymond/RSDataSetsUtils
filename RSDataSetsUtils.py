@@ -3,7 +3,7 @@
 
 """
 
-RSDataSetUtils
+RSDataSetsUtils
 
 ~~~~~~~~~~~~~~~~
 
@@ -15,8 +15,6 @@ The types of data sets currently supported are: PASCAL VOC, VisDrone, DOTA, NWPU
 
 import os
 import cv2
-from xml.dom import minidom
-import xml.etree.ElementTree as ET
 
 
 class YoloBoudingBox(object):
@@ -59,6 +57,7 @@ class VOCLabel(object):
         return self.img_h, self.img_w, self.img_d
 
     def updateBBoxes(self):
+        import xml.etree.ElementTree as ET
         with open(self.label_path, "r") as input_label_file:
             tree = ET.parse(input_label_file)
             root = tree.getroot()
@@ -134,6 +133,7 @@ class RSDataSetsUtils:
 
     @staticmethod
     def writeVOCXmlLabel(voc_label, xml_label_path):
+        from xml.dom import minidom
         voc_label.updateSize()
         img_folder = os.path.split(voc_label.img_path)[0]
         img_name = os.path.split(voc_label.img_path)[1]
@@ -206,8 +206,7 @@ class RSDataSetsUtils:
 
     @staticmethod
     def getDOTA(img_path, label_path):
-        classes = ["plane", "ship", "storage-tank", "baseball-diamond", "tennis-court", "basketball-court", "ground-track-field", "harbor", "bridge", "large-vehicle", "small-vehicle", "helicopter", "roundabout", "soccer-ball-field", "swimming-pool", "container-crane", "airport", "helipad"]
-        voc_label = VOCLabel(img_path, label_path, classes)
+        voc_label = VOCLabel(img_path, label_path)
         with open(label_path, "r") as input_label_file:
             lines = [input_label_file.readlines()]
             for line in lines:
@@ -298,11 +297,17 @@ class RSDataSetsUtils:
         cv2.imshow(voc_label.img_path, img)
         cv2.waitKey()
 
+    @staticmethod
+    def getImgExtName(name, path):
+        ext_list = [".jpg", ".png", ".bmp", ".jpeg", ".jpe", ".pbm", ".pgm", ".ppm", ".sr", ".ras", ".tiff", ".tif", ".exr", "jp2"]
+        for i in ext_list:
+            if os.path.exists(path + name):
+                return i
+
 
 class RSDataSetsConverter(RSDataSetsUtils):
 
     def __init__(self, dataset_name, dataset_type, images_folder_path, labels_folder_path):
-
         self.dataset_name = dataset_name
         self.dataset_type = dataset_type.lower()
         if self.dataset_type not in ["visdrone", "voc", "dota", "yolo", "vhr"]:
@@ -312,33 +317,54 @@ class RSDataSetsConverter(RSDataSetsUtils):
         self.labels_folder_path = labels_folder_path
 
     def convert2VOC(self):
-        txt_file = os.listdir(self.labels_folder_path)
+        file_list = os.listdir(self.labels_folder_path)
+        if self.dataset_type == "yolo":
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".txt":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + self.getImgExtName(os.path.splitext(label_filename)[0], self.images_folder_path))
+                yolo_label = YoloLabel(img_full_path, label_full_path)
+                yolo_label.updateSize()
+                yolo_label.updateBBoxes()
+                voc_label = yolo_label.convert2VOCLabel(classes)
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".txt"
+                save_path = os.path.join(self.labels_folder_path, "../YOLO")
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                self.writeYoloTxtLabel(yolo_label, os.path.join(save_path, output_file_name))
         if self.dataset_type == "dota":
-            for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
-                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(txt)[0] + ".png")
-                voc_label = self.getDOTA(img_full_path, txt_full_path)
-                output_file_name = os.path.basename(img_full_path).split(".")[0] + ".xml"
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".txt":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + ".png")
+                voc_label = self.getDOTA(img_full_path, label_full_path)
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".xml"
                 save_path = os.path.join(self.labels_folder_path, "../VOC")
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
                 self.writeVOCXmlLabel(voc_label, os.path.join(save_path, output_file_name))
         elif self.dataset_type == "visdrone":
-            for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
-                img_full_path = os.path.join(elf.images_folder_path, os.path.splitext(txt)[0] + ".jpg")
-                voc_label = self.getVisDrone(img_full_path, txt_full_path)
-                output_file_name = os.path.basename(img_full_path).split(".")[0] + ".xml"
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".txt":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + ".jpg")
+                voc_label = self.getVisDrone(img_full_path, label_full_path)
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".xml"
                 save_path = os.path.join(self.labels_folder_path, "../VOC")
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
                 self.writeVOCXmlLabel(voc_label, os.path.join(save_path, output_file_name))
         elif self.dataset_type == "vhr":
-            for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
-                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(txt)[0] + ".jpg")
-                voc_label = self.getVHR(img_full_path, txt_full_path)
-                output_file_name = os.path.basename(img_full_path).split(".")[0] + ".xml"
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".txt":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + ".jpg")
+                voc_label = self.getVHR(img_full_path, label_full_path)
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".xml"
                 save_path = os.path.join(self.labels_folder_path, "../VOC")
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
@@ -346,42 +372,62 @@ class RSDataSetsConverter(RSDataSetsUtils):
         else:
             print("type: \"%s\" to voc, Not yet supported!" %(self.dataset_type))
 
-    def convert2Yolo(self):
-        txt_file = os.listdir(self.labels_folder_path)
-        txt_file = os.listdir(self.labels_folder_path)
+    def convert2Yolo(self, classes = None):
+        file_list = os.listdir(self.labels_folder_path)
+        if self.dataset_type == "voc":
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".xml":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + ".jpg")
+                voc_label = VOCLabel(img_full_path, label_full_path)
+                voc_label.updateSize()
+                voc_label.updateBBoxes()
+                yolo_label = voc_label.convert2YoloLabel(classes)
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".txt"
+                save_path = os.path.join(self.labels_folder_path, "../YOLO")
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                self.writeYoloTxtLabel(yolo_label, os.path.join(save_path, output_file_name))
         if self.dataset_type == "dota":
             classes = ["plane", "ship", "storage-tank", "baseball-diamond", "tennis-court", "basketball-court", "ground-track-field", "harbor", "bridge", "large-vehicle", "small-vehicle", "helicopter", "roundabout", "soccer-ball-field", "swimming-pool", "container-crane", "airport", "helipad"]
-            for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
-                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(txt)[0] + ".png")
-                voc_label = self.getDOTA(img_full_path, txt_full_path)
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".xml":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + ".png")
+                voc_label = self.getDOTA(img_full_path, label_full_path)
                 yolo_label = voc_label.convert2YoloLabel(classes)
-                output_file_name = os.path.basename(img_full_path).split(".")[0] + ".txt"
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".txt"
                 save_path = os.path.join(self.labels_folder_path, "../YOLO")
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
                 self.writeYoloTxtLabel(yolo_label, os.path.join(save_path, output_file_name))
         elif self.dataset_type == "visdrone":
             classes = ["ignored regions", "pedestrian", "people", "bicycle", "car", "van", "truck", "tricycle", "awning-tricycle", "bus", "motor", "others"]
-            for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
-                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(txt)[0] + ".jpg")
-                voc_label = self.getVisDrone(img_full_path, txt_full_path)
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".xml":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
+                img_full_path = os.path.join(self.images_folder_path, os.path.splitext(label_filename)[0] + ".jpg")
+                voc_label = self.getVisDrone(img_full_path, label_full_path)
                 yolo_label = voc_label.convert2YoloLabel(classes)
-                output_file_name = os.path.basename(img_full_path).split(".")[0] + ".txt"
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".txt"
                 save_path = os.path.join(self.labels_folder_path, "../YOLO")
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
                 self.writeYoloTxtLabel(yolo_label, os.path.join(save_path, output_file_name))
         elif self.dataset_type == "vhr":
             classes = ["airplane", "ship", "storage tank", "baseball diamond", "tennis court", "basketball court", "ground track field", "harbor", "bridge", "vehicle"]
-            for txt in txt_file:
-                txt_full_path = os.path.join(self.labels_folder_path, txt)
+            for label_filename in file_list:
+                if os.path.splitext(label_filename)[-1] != ".xml":
+                    continue
+                label_full_path = os.path.join(self.labels_folder_path, label_filename)
                 img_full_path = os.path.join(
-                    self.images_folder_path, os.path.splitext(txt)[0] + ".jpg")
-                voc_label = self.getVHR(img_full_path, txt_full_path)
+                    self.images_folder_path, os.path.splitext(label_filename)[0] + ".jpg")
+                voc_label = self.getVHR(img_full_path, label_full_path)
                 yolo_label = voc_label.convert2YoloLabel(classes)
-                output_file_name = os.path.basename(img_full_path).split(".")[0] + ".txt"
+                output_file_name = os.path.splitext(os.path.basename(img_full_path))[0] + ".txt"
                 save_path = os.path.join(self.labels_folder_path, "../YOLO")
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
@@ -406,9 +452,9 @@ class RSDataSetsConverter(RSDataSetsUtils):
             os.makedirs(dst_path)
         os.makedirs(os.path.join(dst_path, self.dataset_name, "image", part))
         for i in os.listdir(self.images_folder_path):
-            os.symlink(os.path.join(self.images_folder_path, i), os.path.join(dst_path, self.dataset_name, "image", part, i))
+            os.symlink(os.path.abspath(os.path.join(self.images_folder_path, i)), os.path.join(dst_path, self.dataset_name, "image", part, i))
         for i in os.listdir(self.labels_folder_path):
-            os.symlink(os.path.join(self.images_folder_path, i), os.path.join(dst_path, self.dataset_name, "label", part, i))
+            os.symlink(os.path.abspath(os.path.join(self.labels_folder_path, i)), os.path.join(dst_path, self.dataset_name, "label", part, i))
 
 
 class RSDataSetsSpliter(RSDataSetsUtils):
@@ -475,20 +521,20 @@ class RSDataSetsSpliter(RSDataSetsUtils):
                 cv2.imwrite(os.path.join(img_dst_path, name_img + ".png"), cropped)
 
     def getVOCLabelfromOrig(self, oringin_voc_label, out_img_floder, out_label_floder, start_x, start_y, size_w, size_h):
+        oringin_voc_label.updateBBoxes()
         img_name = os.path.splitext(os.path.split(oringin_voc_label.img_path)[1])
         label_name = os.path.splitext(os.path.split(oringin_voc_label.label_path)[1])
         img_name = os.path.join(out_img_floder, img_name[0] + "_%s_%s" %(start_y, start_x) + img_name[1])
-        label_name = os.path.join(out_txtout_label_floder_floder, label_name[0] + "_%s_%s" %(start_y, start_x) + label_name[1])
+        label_name = os.path.join(out_label_floder, label_name[0] + "_%s_%s" %(start_y, start_x) + label_name[1])
         voc_label = VOCLabel(img_name, label_name)
         for box in oringin_voc_label.BBoxes:
-            if self.__is_between((box.x_min, box.x_max), (start_x, start_x + size_w)) and self.__is_between((box.y_min, box.y_max), (start_y, start_y + size_h)):
+            if self.isBetween((box.x_min, box.x_max), (start_x, start_x + size_w)) and self.isBetween((box.y_min, box.y_max), (start_y, start_y + size_h)):
                 voc_label.BBoxes.append(VOCBoudingBox(box.x_min - start_x, box.x_max - start_x, box.y_min - start_y, box.y_max - start_y, box.cls_name, box.is_difficult, box.is_truncated))
         return voc_label
 
-    def splitLabels(self, img_floder, out_img_floder, txt_floder, out_label_floder, size_h, size_w):
+    def splitLabels(self, img_floder, out_img_floder, label_floder, out_label_floder, size_h, size_w):
         if not os.path.exists(out_label_floder):
             os.makedirs(out_label_floder)
-        classes = ["plane", "ship", "storage-tank", "baseball-diamond", "tennis-court", "basketball-court", "ground-track-field", "harbor", "bridge", "large-vehicle", "small-vehicle", "helicopter", "roundabout", "soccer-ball-field", "swimming-pool", "container-crane", "airport", "helipad"]
         img_list = os.listdir(out_img_floder)
         for img_name in img_list:
             name = os.path.splitext(img_name)[0]
@@ -496,12 +542,11 @@ class RSDataSetsSpliter(RSDataSetsUtils):
             txt_name = name_list[0]
             y = int(name_list[1])
             x = int(name_list[2])
-            oringin_voc_label = VOCLabel(os.path.join(img_floder, txt_name + ".png"), os.path.join(txt_floder, txt_name + ".xml"), classes)
-            oringin_voc_label.updateBBoxes()
+            oringin_voc_label = VOCLabel(os.path.join(img_floder, txt_name + ".png"), os.path.join(label_floder, txt_name + ".xml"))
             voc_label = self.getVOCLabelfromOrig(oringin_voc_label, out_img_floder, out_label_floder, x, y, size_w, size_h)
             self.writeVOCXmlLabel(voc_label, os.path.join(out_label_floder, name + ".xml"))
 
-    def delete_empty_sample(self, images_folder_path, labels_folder_path):
+    def deleteEmptySample(self, images_folder_path, labels_folder_path):
         txt_list = os.listdir(images_folder_path)
         for txt_name in txt_list:
             name = os.path.splitext(
